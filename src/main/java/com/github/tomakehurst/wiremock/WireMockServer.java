@@ -15,13 +15,13 @@
  */
 package com.github.tomakehurst.wiremock;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.common.FatalStartupException;
-import com.github.tomakehurst.wiremock.common.FileSource;
-import com.github.tomakehurst.wiremock.common.Notifier;
-import com.github.tomakehurst.wiremock.common.ProxySettings;
+import com.github.tomakehurst.wiremock.common.*;
 import com.github.tomakehurst.wiremock.core.Admin;
 import com.github.tomakehurst.wiremock.core.Container;
 import com.github.tomakehurst.wiremock.core.Options;
@@ -43,28 +43,34 @@ import com.github.tomakehurst.wiremock.stubbing.StubMappings;
 import com.github.tomakehurst.wiremock.verification.FindRequestsResult;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.github.tomakehurst.wiremock.verification.VerificationResult;
+import com.google.common.base.Predicate;
 import org.mortbay.log.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.filter;
 
 public class WireMockServer implements Container, Stubbing, Admin {
 
-	public static final String FILES_ROOT = "__files";
+    public static final String FILES_ROOT = "__files";
+    public static final String EXCLUDES_ROOT = "__excludes";
     public static final String MAPPINGS_ROOT = "mappings";
 
-	private final WireMockApp wireMockApp;
+    private final WireMockApp wireMockApp;
     private final StubRequestHandler stubRequestHandler;
 
-	private final HttpServer httpServer;
+    private final HttpServer httpServer;
     private final FileSource fileSource;
-	private final Notifier notifier;
+    private final Notifier notifier;
 
     private final Options options;
 
     protected final WireMock client;
+
+    public static List<String> excludedNodes; //Default Excludes {"excludeNodes":[ "sequential", "excludeNodes", "ipAddress","transactionID","relationTRX","logHashParams" ]}
 
     public WireMockServer(Options options) {
         this.options = options;
@@ -115,6 +121,45 @@ public class WireMockServer implements Container, Stubbing, Admin {
         Log.setLog(new LoggerAdapter(notifier));
 
         client = new WireMock(wireMockApp);
+
+        //read exclude files
+        FileSource mappingsFileSource = fileSource.child(EXCLUDES_ROOT);
+        //Sleep para conectar el debugger
+//        try{Thread.sleep(10000);}catch(Exception ex){}
+        if (mappingsFileSource.exists()) {
+            Iterable<TextFile> mappingFiles = filter(mappingsFileSource.listFilesRecursively(), byFileExtension("json"));
+            for (TextFile mappingFile : mappingFiles) {
+                readExcludeFiles(mappingFile.readContentsAsString());
+            }
+        }
+    }
+
+    private void readExcludeFiles(String excludes) {
+        try {
+            excludedNodes = new ArrayList<String>();
+            JsonFactory factory = new JsonFactory();
+            JsonParser jParser = factory.createParser(excludes);
+            while(jParser.nextToken() != JsonToken.END_OBJECT){
+                String fieldname = jParser.getCurrentName();
+                if ("excludeNodes".equals(fieldname)) {
+                    jParser.nextToken();
+                    while (jParser.nextToken() != JsonToken.END_ARRAY) {
+                        excludedNodes.add(jParser.getText());
+                    }
+                }
+            }
+            jParser.close();
+        } catch (Exception ex) {
+            notifier.error(ex.getMessage());
+        }
+    }
+
+    private Predicate<TextFile> byFileExtension(final String extension) {
+        return new Predicate<TextFile>() {
+            public boolean apply(TextFile input) {
+                return input.name().endsWith("." + extension);
+            }
+        };
     }
 
     private MappingsLoader makeDefaultMappingsLoader() {
@@ -136,13 +181,13 @@ public class WireMockServer implements Container, Stubbing, Admin {
                 .notifier(notifier));
     }
 
-	public WireMockServer(int port, FileSource fileSource, boolean enableBrowserProxying, ProxySettings proxySettings) {
+    public WireMockServer(int port, FileSource fileSource, boolean enableBrowserProxying, ProxySettings proxySettings) {
         this(wireMockConfig()
                 .port(port)
                 .fileSource(fileSource)
                 .enableBrowserProxying(enableBrowserProxying)
                 .proxyVia(proxySettings));
-	}
+    }
 
     public WireMockServer(int port, FileSource fileSource, boolean enableBrowserProxying) {
         this(wireMockConfig()
@@ -150,52 +195,55 @@ public class WireMockServer implements Container, Stubbing, Admin {
                 .fileSource(fileSource)
                 .enableBrowserProxying(enableBrowserProxying));
     }
-	
-	public WireMockServer(int port) {
-		this(wireMockConfig().port(port));
-	}
+
+    public WireMockServer(int port) {
+        this(wireMockConfig().port(port));
+    }
 
     public WireMockServer(int port, Integer httpsPort) {
         this(wireMockConfig().port(port).httpsPort(httpsPort));
     }
-	
-	public WireMockServer() {
-		this(wireMockConfig());
-	}
-	
-	public void loadMappingsUsing(final MappingsLoader mappingsLoader) {
-		wireMockApp.loadMappingsUsing(mappingsLoader);
-	}
+
+    public WireMockServer() {
+        this(wireMockConfig());
+    }
+
+    public void loadMappingsUsing(final MappingsLoader mappingsLoader) {
+        wireMockApp.loadMappingsUsing(mappingsLoader);
+    }
 
     public GlobalSettingsHolder getGlobalSettingsHolder() {
         return wireMockApp.getGlobalSettingsHolder();
     }
 
     public void addMockServiceRequestListener(RequestListener listener) {
-		stubRequestHandler.addRequestListener(listener);
-	}
-	
-	public void enableRecordMappings(FileSource mappingsFileSource, FileSource filesFileSource) {
-	    addMockServiceRequestListener(
+        stubRequestHandler.addRequestListener(listener);
+    }
+
+    public void enableRecordMappings(FileSource mappingsFileSource, FileSource filesFileSource) {
+        addMockServiceRequestListener(
                 new StubMappingJsonRecorder(mappingsFileSource, filesFileSource, wireMockApp, options.matchingHeaders()));
-	    notifier.info("Recording mappings to " + mappingsFileSource.getPath());
-	}
-	
-	public void stop() {
+        notifier.info("Recording mappings to " + mappingsFileSource.getPath());
+    }
+
+    public void stop() {
         httpServer.stop();
-	}
-	
-	public void start() {
+    }
+
+    public void start() {
         try {
-		    httpServer.start();
+            notifier.info("Reading requests from: " + MAPPINGS_ROOT);
+            notifier.info("Reading responses from: " + FILES_ROOT);
+            notifier.info("Reading excludes from: " + EXCLUDES_ROOT);
+            httpServer.start();
         } catch (Exception e) {
             throw new FatalStartupException(e);
         }
-	}
+    }
 
     /**
      * Gracefully shutdown the server.
-     *
+     * <p>
      * This method assumes it is being called as the result of an incoming HTTP request.
      */
     @Override

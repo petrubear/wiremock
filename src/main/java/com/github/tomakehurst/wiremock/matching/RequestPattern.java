@@ -17,6 +17,7 @@ package com.github.tomakehurst.wiremock.matching;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.common.Json;
 import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
@@ -195,39 +196,49 @@ public class RequestPattern {
             db = dbf.newDocumentBuilder();
             Document docRequest = db.parse(isRequest);
 
-            NodeList nodesReqSeq = docRequest.getElementsByTagName("sequential");
-            NodeList nodesReqDate = docRequest.getElementsByTagName("dateAndTime");
-            NodeList nodesReqIp = docRequest.getElementsByTagName("ipAddress");
-            NodeList nodesReqTx = docRequest.getElementsByTagName("transactionID");
+//            NodeList nodesReqSeq = docRequest.getElementsByTagName("sequential");
+//            NodeList nodesReqDate = docRequest.getElementsByTagName("dateAndTime");
+//            NodeList nodesReqIp = docRequest.getElementsByTagName("ipAddress");
+//            NodeList nodesReqTx = docRequest.getElementsByTagName("transactionID");
+//            NodeList nodeLogHashParam = docRequest.getElementsByTagName("logHashParams");
+//            if (nodesReqSeq.getLength() > 0) {
+//                docRequest.getElementsByTagName("arg0").item(0).removeChild(nodesReqSeq.item(0));
+//            }
+
+//            if (nodesReqDate.getLength() > 0) {
+//                docRequest.getElementsByTagName("arg0").item(0).removeChild(nodesReqDate.item(0));
+//            }
+
+//            if (nodesReqIp.getLength() > 0) {
+//                docRequest.getElementsByTagName("arg0").item(0).removeChild(nodesReqIp.item(0));
+//            }
+
+//            if (nodesReqTx.getLength() > 0) {
+//                docRequest.getElementsByTagName("arg0").item(0).removeChild(nodesReqTx.item(0));
+//            }
+
+
+//            if (nodeLogHashParam.getLength() > 0) {
+//                for (int i = nodeLogHashParam.getLength() - 1; i >= 0; i--) {
+//                    docRequest.getElementsByTagName("arg0").item(0).removeChild(nodeLogHashParam.item(i));
+//                }
+//            }
+            final String rootNode = "arg0";
+            for (String nodeName : WireMockServer.excludedNodes) {
+                NodeList multiNode = docRequest.getElementsByTagName(nodeName);
+                if (multiNode.getLength() > 0) {
+                    for (int i = multiNode.getLength() - 1; i >= 0; i--) {
+                        docRequest.getElementsByTagName(rootNode).item(0).removeChild(multiNode.item(i));
+                    }
+                }
+            }
+
+            //TODO: esto me vuelo siempre?
             NodeList nodesReqTxRel = docRequest.getElementsByTagName("relationTRX");
-            NodeList nodeLogHashParam = docRequest.getElementsByTagName("logHashParams");
-
-            if (nodesReqSeq.getLength() > 0) {
-                docRequest.getElementsByTagName("arg0").item(0).removeChild(nodesReqSeq.item(0));
-            }
-
-            if (nodesReqDate.getLength() > 0) {
-                docRequest.getElementsByTagName("arg0").item(0).removeChild(nodesReqDate.item(0));
-            }
-
-            if (nodesReqIp.getLength() > 0) {
-                docRequest.getElementsByTagName("arg0").item(0).removeChild(nodesReqIp.item(0));
-            }
-
-            if (nodesReqTx.getLength() > 0) {
-                docRequest.getElementsByTagName("arg0").item(0).removeChild(nodesReqTx.item(0));
-            }
-
             if (nodesReqTxRel.getLength() > 0) {
                 for (int i = 0; i < docRequest.getElementsByTagName("lstTransaction").getLength(); i++) {
                     nodesReqTxRel = docRequest.getElementsByTagName("relationTRX");
                     docRequest.getElementsByTagName("lstTransaction").item(i).removeChild(nodesReqTxRel.item(0));
-                }
-            }
-
-            if (nodeLogHashParam.getLength() > 0) {
-                for (int i = nodeLogHashParam.getLength() - 1; i >= 0; i--) {
-                    docRequest.getElementsByTagName("arg0").item(0).removeChild(nodeLogHashParam.item(i));
                 }
             }
 
@@ -236,44 +247,54 @@ public class RequestPattern {
             LSSerializer lsSerializer = domImplementation.createLSSerializer();
             requestString = lsSerializer.writeToString(docRequest);
 
-
             InputSource isPattern = new InputSource();
             isPattern.setCharacterStream(new StringReader(bodyPatterns.get(0).getEqualTo()));
             Document docPattern = db.parse(isPattern);
 
-            NodeList nodesPatSeq = docPattern.getElementsByTagName("sequential");
-            NodeList nodesPatDate = docPattern.getElementsByTagName("dateAndTime");
-            NodeList nodesPatIp = docPattern.getElementsByTagName("ipAddress");
-            NodeList nodesPatTx = docPattern.getElementsByTagName("transactionID");
+//            NodeList nodesPatSeq = docPattern.getElementsByTagName("sequential");
+//            NodeList nodesPatDate = docPattern.getElementsByTagName("dateAndTime");
+//            NodeList nodesPatIp = docPattern.getElementsByTagName("ipAddress");
+//            NodeList nodesPatTx = docPattern.getElementsByTagName("transactionID");
+//            NodeList nodesPatLogHashParam = docPattern.getElementsByTagName("logHashParams");
+
+//            if (nodesPatSeq.getLength() > 0) {
+//                docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatSeq.item(0));
+//            }
+//
+//            if (nodesPatDate.getLength() > 0) {
+//                docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatDate.item(0));
+//            }
+//
+//            if (nodesPatIp.getLength() > 0) {
+//                docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatIp.item(0));
+//            }
+//
+//            if (nodesPatTx.getLength() > 0) {
+//                docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatTx.item(0));
+//            }
+
+//            if (nodesPatLogHashParam.getLength() > 0) {
+//                for (int i = nodesPatLogHashParam.getLength() - 1; i >= 0; i--) {
+//                    docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatLogHashParam.item(i));
+//                }
+//            }
+
+            //TODO: puedo barrerme ambas cosas en 1 loop?
+            for (String nodeName : WireMockServer.excludedNodes) {
+                NodeList multiNode = docPattern.getElementsByTagName(nodeName);
+                if (multiNode.getLength() > 0) {
+                    for (int i = multiNode.getLength() - 1; i >= 0; i--) {
+                        docPattern.getElementsByTagName(rootNode).item(0).removeChild(multiNode.item(i));
+                    }
+                }
+            }
+
+            //TODO: esto me vuelo siempre?
             NodeList nodesPatTxRel = docPattern.getElementsByTagName("relationTRX");
-            NodeList nodesPatLogHashParam = docPattern.getElementsByTagName("logHashParams");
-
-            if (nodesPatSeq.getLength() > 0) {
-                docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatSeq.item(0));
-            }
-
-            if (nodesPatDate.getLength() > 0) {
-                docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatDate.item(0));
-            }
-
-            if (nodesPatIp.getLength() > 0) {
-                docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatIp.item(0));
-            }
-
-            if (nodesPatTx.getLength() > 0) {
-                docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatTx.item(0));
-            }
-
             if (nodesPatTxRel.getLength() > 0) {
                 for (int i = 0; i < docPattern.getElementsByTagName("lstTransaction").getLength(); i++) {
                     nodesPatTxRel = docPattern.getElementsByTagName("relationTRX");
                     docPattern.getElementsByTagName("lstTransaction").item(i).removeChild(nodesPatTxRel.item(0));
-                }
-            }
-
-            if (nodesPatLogHashParam.getLength() > 0) {
-                for (int i = nodesPatLogHashParam.getLength() - 1; i >= 0; i--) {
-                    docPattern.getElementsByTagName("arg0").item(0).removeChild(nodesPatLogHashParam.item(i));
                 }
             }
 
