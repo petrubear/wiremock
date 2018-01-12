@@ -139,7 +139,7 @@ public class WireMockServer implements Container, Stubbing, Admin {
             excludedNodes = new ArrayList<String>();
             JsonFactory factory = new JsonFactory();
             JsonParser jParser = factory.createParser(excludes);
-            while(jParser.nextToken() != JsonToken.END_OBJECT){
+            while (jParser.nextToken() != JsonToken.END_OBJECT) {
                 String fieldname = jParser.getCurrentName();
                 if ("excludeNodes".equals(fieldname)) {
                     jParser.nextToken();
@@ -235,6 +235,11 @@ public class WireMockServer implements Container, Stubbing, Admin {
             notifier.info("Reading requests from: " + MAPPINGS_ROOT);
             notifier.info("Reading responses from: " + FILES_ROOT);
             notifier.info("Reading excludes from: " + EXCLUDES_ROOT);
+            StringBuilder sb = new StringBuilder();
+            for (String item : excludedNodes) {
+                sb.append("[").append(item).append("]");
+            }
+            notifier.info("Registered excluded nodes: " + sb.toString());
             httpServer.start();
         } catch (Exception e) {
             throw new FatalStartupException(e);

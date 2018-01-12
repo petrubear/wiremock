@@ -233,7 +233,7 @@ public class RequestPattern {
                 }
             }
 
-            //TODO: esto me vuelo siempre?
+            //Excluyo esto porque son nodos que no estan en la raiz de <arg0>
             NodeList nodesReqTxRel = docRequest.getElementsByTagName("relationTRX");
             if (nodesReqTxRel.getLength() > 0) {
                 for (int i = 0; i < docRequest.getElementsByTagName("lstTransaction").getLength(); i++) {
@@ -289,7 +289,7 @@ public class RequestPattern {
                 }
             }
 
-            //TODO: esto me vuelo siempre?
+            //TODO: esto me vuelo siempre en las transacciones como transferencias, etc.
             NodeList nodesPatTxRel = docPattern.getElementsByTagName("relationTRX");
             if (nodesPatTxRel.getLength() > 0) {
                 for (int i = 0; i < docPattern.getElementsByTagName("lstTransaction").getLength(); i++) {
