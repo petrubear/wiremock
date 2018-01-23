@@ -1,1 +1,4 @@
+/*web*/
 {"excludeNodes":[ "sequential", "dateAndTime", "ipAddress","transactionID","logHashParams" ]}
+/* mobile */
+//{"excludeNodes":[ "sequential", "dateAndTime", "ipAddress","transactionID","logHashParams", "lstTransaction", "additionalCusId", "channel", "groupId", "tranServiceCode" ]}

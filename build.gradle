@@ -164,61 +164,61 @@ signing {
     required { !version.toString().contains("SNAPSHOT") && gradle.taskGraph.hasTask("uploadArchives") }
     sign configurations.archives
 }
-
-if (!this.hasProperty('sonatypeUser'))
-    user = 'default'
-else
-    user = sonatypeUser
-
-if (!this.hasProperty('sonatypePassword'))
-    password = 'default'
-else
-    password = sonatypePassword
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2') {
-            	authentication(userName: user , password: password)
-        	};
-        	beforeDeployment { deployment -> signing.signPom(deployment) };
-            pom.artifactId = 'wiremock'
-            pom.project {
-            	packaging 'jar'
-            	name 'WireMock'
-            	description 'A web service test double for all occasions'
-            	
-            	url 'https://github.com/tomakehurst/wiremock'
-            	
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        distribution 'repo'
-                    }
-                }
-                
-                scm {
-					connection 'https://tomakehurst@github.com/tomakehurst/wiremock.git'
-					developerConnection 'https://tomakehurst@github.com/tomakehurst/wiremock.git'
-					url 'https://tomakehurst@github.com/tomakehurst/wiremock.git'
-				}
-				
-				developers {
-					developer {
-						id 'tomakehurst'
-						name 'Tom Akehurst'
-					}
-				}
-            }
-            
-            pom.whenConfigured { thepom ->
-            	println thepom.dependencies.findAll({ it.artifactId.equals('junit') || it.scope.equals('test') });
-            	thepom.dependencies.removeAll(thepom.dependencies.findAll({ it.artifactId.equals('junit') || it.scope.equals('test') }));
-			}
-        }
-    }
-}
+//
+//if (!this.hasProperty('sonatypeUser'))
+//    user = 'default'
+//else
+//    user = sonatypeUser
+//
+//if (!this.hasProperty('sonatypePassword'))
+//    password = 'default'
+//else
+//    password = sonatypePassword
+//
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2') {
+//            	authentication(userName: user , password: password)
+//        	};
+//        	beforeDeployment { deployment -> signing.signPom(deployment) };
+//            pom.artifactId = 'wiremock'
+//            pom.project {
+//            	packaging 'jar'
+//            	name 'WireMock'
+//            	description 'A web service test double for all occasions'
+//
+//            	url 'https://github.com/tomakehurst/wiremock'
+//
+//                licenses {
+//                    license {
+//                        name 'The Apache Software License, Version 2.0'
+//                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//                        distribution 'repo'
+//                    }
+//                }
+//
+//                scm {
+//					connection 'https://tomakehurst@github.com/tomakehurst/wiremock.git'
+//					developerConnection 'https://tomakehurst@github.com/tomakehurst/wiremock.git'
+//					url 'https://tomakehurst@github.com/tomakehurst/wiremock.git'
+//				}
+//
+//				developers {
+//					developer {
+//						id 'tomakehurst'
+//						name 'Tom Akehurst'
+//					}
+//				}
+//            }
+//
+//            pom.whenConfigured { thepom ->
+//            	println thepom.dependencies.findAll({ it.artifactId.equals('junit') || it.scope.equals('test') });
+//            	thepom.dependencies.removeAll(thepom.dependencies.findAll({ it.artifactId.equals('junit') || it.scope.equals('test') }));
+//			}
+//        }
+//    }
+//}
 
 task addGitTag << {
     println "git tag ${version}".execute().text
