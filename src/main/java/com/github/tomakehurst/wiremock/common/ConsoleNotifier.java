@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.github.tomakehurst.wiremock.common;
 
 import java.text.DateFormat;
@@ -23,6 +24,18 @@ import static java.lang.System.err;
 import static java.lang.System.out;
 
 public class ConsoleNotifier implements Notifier {
+
+    private class ConsoleColors {
+        public static final String ANSI_RESET = "\u001B[0m";
+        public static final String ANSI_BLACK = "\u001B[30m";
+        public static final String ANSI_RED = "\u001B[31m";
+        public static final String ANSI_GREEN = "\u001B[32m";
+        public static final String ANSI_YELLOW = "\u001B[33m";
+        public static final String ANSI_BLUE = "\u001B[34m";
+        public static final String ANSI_PURPLE = "\u001B[35m";
+        public static final String ANSI_CYAN = "\u001B[36m";
+        public static final String ANSI_WHITE = "\u001B[37m";
+    }
 
     private final boolean verbose;
 
@@ -41,8 +54,15 @@ public class ConsoleNotifier implements Notifier {
     }
 
     @Override
+    public void warn(String message) {
+        if (verbose) {
+            err.println(ConsoleColors.ANSI_BLUE + formatMessage(message) + ConsoleColors.ANSI_RESET);
+        }
+    }
+
+    @Override
     public void error(String message) {
-        err.println(formatMessage(message));
+        err.println(ConsoleColors.ANSI_RED + formatMessage(message) + ConsoleColors.ANSI_RESET);
     }
 
     @Override

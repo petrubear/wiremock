@@ -48,7 +48,7 @@ public class InMemoryStubMappings implements StubMappings {
 
 	private void notifyIfResponseNotConfigured(Request request, StubMapping matchingMapping) {
 		if (matchingMapping == NOT_CONFIGURED) {
-		    notifier().info("No mapping found matching URL " + request.getUrl());
+		    notifier().error("No mapping found matching URL " + request.getUrl());
 		}
 	}
 

@@ -123,18 +123,18 @@ task jarAll(type: Jar, dependsOn: jar) {
             }
         }
         
-        Date date = new Date()
-		String name = jar.baseName
-        project.artifacts.add('archives',
-			[
-				getClassifier: { -> "standalone" },
-				getDate: {-> date },
-				getExtension: {-> "jar" },
-				getType: {-> "jar" },
-				getFile: {-> jarFile },
-				getName: {-> name }
-			] as PublishArtifact
-		)
+//        Date date = new Date()
+//		String name = jar.baseName
+//        project.artifacts.add('archives',
+//			[
+//				getClassifier: { -> "standalone" },
+//				getDate: {-> date },
+//				getExtension: {-> "jar" },
+//				getType: {-> "jar" },
+//				getFile: {-> jarFile },
+//				getName: {-> name }
+//			] as PublishArtifact
+//		)
     }
     manifest {
         attributes("Main-Class": "com.github.tomakehurst.wiremock.standalone.WireMockServerRunner")
