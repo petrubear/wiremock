@@ -232,14 +232,14 @@ public class WireMockServer implements Container, Stubbing, Admin {
 
     public void start() {
         try {
-            notifier.info("Reading requests from: " + MAPPINGS_ROOT);
-            notifier.info("Reading responses from: " + FILES_ROOT);
-            notifier.info("Reading excludes from: " + EXCLUDES_ROOT);
+            notifier.debug("Reading requests from: " + MAPPINGS_ROOT);
+            notifier.debug("Reading responses from: " + FILES_ROOT);
+            notifier.debug("Reading excludes from: " + EXCLUDES_ROOT);
             StringBuilder sb = new StringBuilder();
             for (String item : excludedNodes) {
                 sb.append("[").append(item).append("]");
             }
-            notifier.info("Registered excluded nodes: " + sb.toString());
+            notifier.debug("Registered excluded nodes: " + sb.toString());
             httpServer.start();
         } catch (Exception e) {
             throw new FatalStartupException(e);

@@ -61,6 +61,13 @@ public class ConsoleNotifier implements Notifier {
     }
 
     @Override
+    public void debug(String message) {
+        if (verbose) {
+            err.println(ConsoleColors.ANSI_GREEN + formatMessage(message) + ConsoleColors.ANSI_RESET);
+        }
+    }
+
+    @Override
     public void error(String message) {
         err.println(ConsoleColors.ANSI_RED + formatMessage(message) + ConsoleColors.ANSI_RESET);
     }

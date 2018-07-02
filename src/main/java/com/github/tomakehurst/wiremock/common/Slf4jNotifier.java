@@ -43,6 +43,13 @@ public class Slf4jNotifier implements Notifier {
     }
 
     @Override
+    public void debug(String message) {
+        if (verbose) {
+            log.debug(message);
+        }
+    }
+
+    @Override
     public void error(String message) {
         log.error(message);
     }
