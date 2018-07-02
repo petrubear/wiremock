@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.github.tomakehurst.wiremock;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -21,14 +22,29 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.common.*;
+import com.github.tomakehurst.wiremock.common.FatalStartupException;
+import com.github.tomakehurst.wiremock.common.FileSource;
+import com.github.tomakehurst.wiremock.common.Notifier;
+import com.github.tomakehurst.wiremock.common.ProxySettings;
+import com.github.tomakehurst.wiremock.common.TextFile;
 import com.github.tomakehurst.wiremock.core.Admin;
 import com.github.tomakehurst.wiremock.core.Container;
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockApp;
 import com.github.tomakehurst.wiremock.extension.ResponseTransformer;
-import com.github.tomakehurst.wiremock.global.*;
-import com.github.tomakehurst.wiremock.http.*;
+import com.github.tomakehurst.wiremock.global.GlobalSettings;
+import com.github.tomakehurst.wiremock.global.GlobalSettingsHolder;
+import com.github.tomakehurst.wiremock.global.RequestDelayControl;
+import com.github.tomakehurst.wiremock.global.RequestDelaySpec;
+import com.github.tomakehurst.wiremock.global.ThreadSafeRequestDelayControl;
+import com.github.tomakehurst.wiremock.http.AdminRequestHandler;
+import com.github.tomakehurst.wiremock.http.BasicResponseRenderer;
+import com.github.tomakehurst.wiremock.http.HttpServer;
+import com.github.tomakehurst.wiremock.http.HttpServerFactory;
+import com.github.tomakehurst.wiremock.http.ProxyResponseRenderer;
+import com.github.tomakehurst.wiremock.http.RequestListener;
+import com.github.tomakehurst.wiremock.http.StubRequestHandler;
+import com.github.tomakehurst.wiremock.http.StubResponseRenderer;
 import com.github.tomakehurst.wiremock.jetty6.Jetty6HttpServerFactory;
 import com.github.tomakehurst.wiremock.jetty6.LoggerAdapter;
 import com.github.tomakehurst.wiremock.junit.Stubbing;
@@ -46,6 +62,10 @@ import com.github.tomakehurst.wiremock.verification.VerificationResult;
 import com.google.common.base.Predicate;
 import org.mortbay.log.Log;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,40 +102,40 @@ public class WireMockServer implements Container, Stubbing, Admin {
         JsonFileMappingsSaver mappingsSaver = new JsonFileMappingsSaver(fileSource.child(MAPPINGS_ROOT));
 
         wireMockApp = new WireMockApp(
-                requestDelayControl,
-                options.browserProxyingEnabled(),
-                defaultMappingsLoader,
-                mappingsSaver,
-                options.requestJournalDisabled(),
-                options.maxRequestJournalEntries(),
-                options.extensionsOfType(ResponseTransformer.class),
-                fileSource,
-                this
+            requestDelayControl,
+            options.browserProxyingEnabled(),
+            defaultMappingsLoader,
+            mappingsSaver,
+            options.requestJournalDisabled(),
+            options.maxRequestJournalEntries(),
+            options.extensionsOfType(ResponseTransformer.class),
+            fileSource,
+            this
         );
 
         AdminRequestHandler adminRequestHandler = new AdminRequestHandler(
-                wireMockApp,
-                new BasicResponseRenderer()
+            wireMockApp,
+            new BasicResponseRenderer()
         );
         stubRequestHandler = new StubRequestHandler(
-                wireMockApp,
-                new StubResponseRenderer(
-                        fileSource.child(FILES_ROOT),
-                        wireMockApp.getGlobalSettingsHolder(),
-                        new ProxyResponseRenderer(
-                                options.proxyVia(),
-                                options.httpsSettings().trustStore(),
-                                options.shouldPreserveHostHeader(),
-                                options.proxyHostHeader()
-                        )
+            wireMockApp,
+            new StubResponseRenderer(
+                fileSource.child(FILES_ROOT),
+                wireMockApp.getGlobalSettingsHolder(),
+                new ProxyResponseRenderer(
+                    options.proxyVia(),
+                    options.httpsSettings().trustStore(),
+                    options.shouldPreserveHostHeader(),
+                    options.proxyHostHeader()
                 )
+            )
         );
         HttpServerFactory httpServerFactory = new Jetty6HttpServerFactory();
         httpServer = httpServerFactory.buildHttpServer(
-                options,
-                adminRequestHandler,
-                stubRequestHandler,
-                requestDelayControl
+            options,
+            adminRequestHandler,
+            stubRequestHandler,
+            requestDelayControl
         );
 
         Log.setLog(new LoggerAdapter(notifier));
@@ -123,14 +143,25 @@ public class WireMockServer implements Container, Stubbing, Admin {
         client = new WireMock(wireMockApp);
 
         //read exclude files
-        FileSource mappingsFileSource = fileSource.child(EXCLUDES_ROOT);
+        FileSource excludeFileSource = fileSource.child(EXCLUDES_ROOT);
         //Sleep para conectar el debugger
 //        try{Thread.sleep(10000);}catch(Exception ex){}
-        if (mappingsFileSource.exists()) {
-            Iterable<TextFile> mappingFiles = filter(mappingsFileSource.listFilesRecursively(), byFileExtension("json"));
-            for (TextFile mappingFile : mappingFiles) {
-                readExcludeFiles(mappingFile.readContentsAsString());
+        if (!excludeFileSource.exists()) {
+            try {
+                Path excudeFile = Paths.get(EXCLUDES_ROOT + "/exclude.json");
+                Files.createDirectories(Paths.get(EXCLUDES_ROOT));
+                Files.createFile(excudeFile);
+                String nodes = "{\"excludeNodes\":[\"dateAndTime\", \"ipAddress\" ]}";
+                Files.write(excudeFile, nodes.getBytes());
+            } catch (IOException ex) {
+                notifier.error("Can't create dir: " + EXCLUDES_ROOT +
+                    " info: " + ex.getMessage());
             }
+        }
+
+        Iterable<TextFile> excludeFiles = filter(excludeFileSource.listFilesRecursively(), byFileExtension("json"));
+        for (TextFile excludeFile : excludeFiles) {
+            readExcludeFiles(excludeFile.readContentsAsString());
         }
     }
 
@@ -150,7 +181,7 @@ public class WireMockServer implements Container, Stubbing, Admin {
             }
             jParser.close();
         } catch (Exception ex) {
-            notifier.error(ex.getMessage());
+            notifier.error("Can't read exclude file: " + ex.getMessage());
         }
     }
 
@@ -173,27 +204,27 @@ public class WireMockServer implements Container, Stubbing, Admin {
 
     public WireMockServer(int port, Integer httpsPort, FileSource fileSource, boolean enableBrowserProxying, ProxySettings proxySettings, Notifier notifier) {
         this(wireMockConfig()
-                .port(port)
-                .httpsPort(httpsPort)
-                .fileSource(fileSource)
-                .enableBrowserProxying(enableBrowserProxying)
-                .proxyVia(proxySettings)
-                .notifier(notifier));
+            .port(port)
+            .httpsPort(httpsPort)
+            .fileSource(fileSource)
+            .enableBrowserProxying(enableBrowserProxying)
+            .proxyVia(proxySettings)
+            .notifier(notifier));
     }
 
     public WireMockServer(int port, FileSource fileSource, boolean enableBrowserProxying, ProxySettings proxySettings) {
         this(wireMockConfig()
-                .port(port)
-                .fileSource(fileSource)
-                .enableBrowserProxying(enableBrowserProxying)
-                .proxyVia(proxySettings));
+            .port(port)
+            .fileSource(fileSource)
+            .enableBrowserProxying(enableBrowserProxying)
+            .proxyVia(proxySettings));
     }
 
     public WireMockServer(int port, FileSource fileSource, boolean enableBrowserProxying) {
         this(wireMockConfig()
-                .port(port)
-                .fileSource(fileSource)
-                .enableBrowserProxying(enableBrowserProxying));
+            .port(port)
+            .fileSource(fileSource)
+            .enableBrowserProxying(enableBrowserProxying));
     }
 
     public WireMockServer(int port) {
@@ -222,7 +253,7 @@ public class WireMockServer implements Container, Stubbing, Admin {
 
     public void enableRecordMappings(FileSource mappingsFileSource, FileSource filesFileSource) {
         addMockServiceRequestListener(
-                new StubMappingJsonRecorder(mappingsFileSource, filesFileSource, wireMockApp, options.matchingHeaders()));
+            new StubMappingJsonRecorder(mappingsFileSource, filesFileSource, wireMockApp, options.matchingHeaders()));
         notifier.info("Recording mappings to " + mappingsFileSource.getPath());
     }
 
@@ -273,16 +304,16 @@ public class WireMockServer implements Container, Stubbing, Admin {
 
     public int port() {
         checkState(
-                isRunning(),
-                "Not listening on HTTP port. The WireMock server is most likely stopped"
+            isRunning(),
+            "Not listening on HTTP port. The WireMock server is most likely stopped"
         );
         return httpServer.port();
     }
 
     public int httpsPort() {
         checkState(
-                isRunning() && options.httpsSettings().enabled(),
-                "Not listening on HTTPS port. Either HTTPS is not enabled or the WireMock server is stopped."
+            isRunning() && options.httpsSettings().enabled(),
+            "Not listening on HTTPS port. Either HTTPS is not enabled or the WireMock server is stopped."
         );
         return httpServer.httpsPort();
     }
