@@ -1,0 +1,1 @@
+java -jar $WIREMOCK_HOME/wiremock-1.58.1-standalone.jar --verbose --port 9080
