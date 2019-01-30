@@ -249,6 +249,10 @@ public class RequestPattern {
             LSSerializer lsSerializer = domImplementation.createLSSerializer();
             requestString = lsSerializer.writeToString(docRequest);
 
+            //EM en modo record, el equalTo del bodyPattern me llega null why?
+            if(bodyPatterns.get(0).getEqualTo() == null){
+                return false;
+            }
             InputSource isPattern = new InputSource();
             isPattern.setCharacterStream(new StringReader(bodyPatterns.get(0).getEqualTo()));
             Document docPattern = db.parse(isPattern);

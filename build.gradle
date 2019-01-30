@@ -5,8 +5,9 @@ apply plugin: 'signing'
 apply plugin: 'idea'
 apply plugin: 'project-report'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+//Caused by: java.lang.ClassNotFoundException: joptsimple.OptionParser
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
 
 group = 'com.github.tomakehurst'
 version = '1.58.1'

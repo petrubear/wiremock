@@ -86,7 +86,9 @@ public class StubMappingJsonRecorder implements RequestListener {
             if (contentType.contains("json")) {
                 return ValuePattern.equalToJson(request.getBodyAsString(), LENIENT);
             } else if (contentType.contains("xml")) {
-                return ValuePattern.equalToXml(request.getBodyAsString());
+                //return ValuePattern.equalToXml(request.getBodyAsString());
+                //EM para omnia quiero que el recorder use siempre compareTo
+                return ValuePattern.equalTo(request.getBodyAsString());
             }
         }
 
