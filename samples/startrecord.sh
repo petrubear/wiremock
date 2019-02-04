@@ -1,0 +1,1 @@
+java -Xdebug -agentlib:jdwp=transport=dt_socket,address=9999,server=y,suspend=n -jar wiremock-1.58.1-standalone.jar --verbose --port 9080 --record-mappings --proxy-all http://172.16.72.143:9080/ --preserve-host-header
